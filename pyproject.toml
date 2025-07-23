@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [project]
 name = "thecompaniesapi"
-version = "1.0.2"
+version = "1.0.4"
 authors = [{ name = "The Companies API SARL", email = "yael@thecompaniesapi.com" }]
 dependencies = [
     "requests >= 2.28.1",
