@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 from src.thecompaniesapi import Client, HttpClient, ApiError
 
 
+@pytest.mark.unit
 class TestHttpClient:
     """Test the HttpClient class functionality."""
     
@@ -172,6 +173,7 @@ class TestHttpClient:
         assert result == {"data": "Plain text response", "status": 200}
 
 
+@pytest.mark.unit
 class TestClient:
     """Test the main Client class."""
     
@@ -202,17 +204,17 @@ class TestClient:
         assert client.http.timeout == 60
     
     @responses.activate
-    def test_fetch_api_health(self):
-        """Test the example fetch_api_health method."""
+    def test_fetchApiHealth(self):
+        """Test the dynamically generated fetchApiHealth method."""
         responses.add(
             responses.GET,
-            "https://api.thecompaniesapi.com/v2/health",
+            "https://api.thecompaniesapi.com/",
             json={"status": "healthy"},
             status=200
         )
         
         client = Client(api_token="test-token")
-        result = client.fetch_api_health()
+        result = client.fetchApiHealth()
         
         assert result == {"status": "healthy"}
     
@@ -222,12 +224,28 @@ class TestClient:
         
         # Mock the HttpClient's get method
         with patch.object(client.http, 'get', return_value={"mocked": True}) as mock_get:
-            result = client.fetch_api_health()
+            result = client.fetchApiHealth()
             
-            mock_get.assert_called_once_with('/v2/health')
+            mock_get.assert_called_once_with('/', params={})
             assert result == {"mocked": True}
+    
+    def test_dynamic_operations_loading(self):
+        """Test that operations are loaded dynamically from the generated schema."""
+        client = Client(api_token="test-token")
+        
+        # Should have loaded operations from generated schema
+        assert len(client._operations_map) > 0
+        assert "fetchApiHealth" in client._operations_map
+        
+        # Test dynamic attribute access
+        assert hasattr(client, "fetchApiHealth")
+        
+        # Test that non-existent methods raise AttributeError
+        with pytest.raises(AttributeError):
+            client.non_existent_method
 
 
+@pytest.mark.unit
 class TestApiError:
     """Test the ApiError exception class."""
     
