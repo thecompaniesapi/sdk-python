@@ -11,7 +11,7 @@ dependencies = [
 ]
 description = "Python SDK for The Companies API"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
@@ -21,7 +21,12 @@ classifiers = [
 test = [
     "pytest >= 6.0",
     "pytest-mock >= 3.0",
-    "responses >= 0.20.0"
+    "responses >= 0.20.0",
+    "python-dotenv >= 0.19.0"
+]
+codegen = [
+    "datamodel-code-generator[http] >= 0.21.0",
+    "pydantic >= 2.0.0"
 ]
 [project.urls]
 "Homepage" = "https://www.thecompaniesapi.com/"
@@ -32,3 +37,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (may be slow)",
+    "unit: marks tests as unit tests (fast)"
+]

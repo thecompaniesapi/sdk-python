@@ -1,6 +1,6 @@
 import json
 import urllib.parse
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -165,6 +165,16 @@ class HttpClient:
         """Make a PUT request."""
         return self._make_request('PUT', path, params=params, json_data=json_data, headers=headers)
     
+    def patch(
+        self,
+        path: str,
+        json_data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None
+    ) -> Dict[str, Any]:
+        """Make a PATCH request."""
+        return self._make_request('PATCH', path, params=params, json_data=json_data, headers=headers)
+    
     def delete(
         self,
         path: str,
@@ -183,7 +193,7 @@ class ApiError(Exception):
 class Client:
     """
     Main client for The Companies API.
-    This will be extended with operation methods generated from the OpenAPI schema.
+    Uses hybrid approach: operations are dynamically created from generated operations map.
     """
     
     def __init__(
@@ -202,3 +212,65 @@ class Client:
             visitor_id=visitor_id,
             timeout=timeout
         )
+        
+        # Load operations map (will be populated after schema generation)
+        self._operations_map = self._load_operations_map()
+    
+    def _load_operations_map(self) -> Dict[str, Any]:
+        """Load the generated operations map."""
+        try:
+            from .generated import operations_map
+            return operations_map
+        except ImportError:
+            # Operations map not generated yet - return empty dict
+            return {}
+    
+    def _create_operation_method(self, operation_config: Dict[str, Any]) -> Callable:
+        """Create a method for a specific operation."""
+        path = operation_config['path']
+        method = operation_config['method'].lower()
+        path_params = operation_config.get('pathParams', [])
+        
+        def operation_method(**kwargs) -> Dict[str, Any]:
+            # Separate path parameters from query/body parameters
+            path_params_dict = {}
+            remaining_params = kwargs.copy()
+            
+            for param_name in path_params:
+                if param_name in remaining_params:
+                    path_params_dict[param_name] = remaining_params.pop(param_name)
+            
+            # Replace path parameters in the URL
+            final_path = path
+            for param_name, param_value in path_params_dict.items():
+                final_path = final_path.replace(f'{{{param_name}}}', str(param_value))
+            
+            # Route to appropriate HTTP method
+            if method == 'get':
+                return self.http.get(final_path, params=remaining_params)
+            elif method == 'post':
+                return self.http.post(final_path, json_data=remaining_params)
+            elif method == 'put':
+                return self.http.put(final_path, json_data=remaining_params)
+            elif method == 'patch':
+                return self.http.patch(final_path, json_data=remaining_params)
+            elif method == 'delete':
+                return self.http.delete(final_path, params=remaining_params)
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
+        
+        # Set method name and docstring for better debugging
+        operation_method.__name__ = f"operation_{path.replace('/', '_').replace('{', '').replace('}', '')}"
+        operation_method.__doc__ = f"Auto-generated method for {method.upper()} {path}"
+        
+        return operation_method
+    
+    def __getattr__(self, name: str) -> Callable:
+        """Dynamically create operation methods from the operations map."""
+        if name in self._operations_map:
+            method = self._create_operation_method(self._operations_map[name])
+            # Cache the method to avoid recreating it
+            setattr(self, name, method)
+            return method
+        
+        raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
