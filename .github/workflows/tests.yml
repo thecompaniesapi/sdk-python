@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    
+    name: Test Python ${{ matrix.python-version }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[test]"
+    
+    - name: Validate package
+      run: |
+        python -c "import src.thecompaniesapi; print('✅ Package imports successfully')"
+        python -c "from src.thecompaniesapi import Client, HttpClient, ApiError; print('✅ All exports available')"
+    
+    - name: Check syntax
+      run: |
+        python -m py_compile src/thecompaniesapi/*.py
+        python -m py_compile src/thecompaniesapi/generated/*.py
+        python -m py_compile tests/*.py
+        python -m py_compile scripts/*.py
+    
+    - name: Run unit tests
+      run: pytest tests/test_client.py -m unit -v
+    
+    - name: Run integration tests
+      env:
+        TCA_API_TOKEN: ${{ secrets.TCA_API_TOKEN }}
+      run: pytest tests/test_integration.py -m integration -v
+    
+    - name: Test package installation
+      run: |
+        pip install -e .
+        python -c "import thecompaniesapi; print('✅ Package installs and imports correctly')" 
