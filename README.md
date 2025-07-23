@@ -530,7 +530,14 @@ response = tca.fetch_openapi()
 schema = response["data"]  # The OpenAPI schema
 ```
 
-## License
+## 🔗 Links
+
+- [The Companies API](https://www.thecompaniesapi.com)
+- [API Documentation](https://www.thecompaniesapi.com/api)
+- [TypeScript SDK](https://github.com/thecompaniesapi/sdk-typescript)
+- [Support & Live Chat](https://www.thecompaniesapi.com/)
+
+## 📄 License
 
 [MIT](./LICENSE) License © [TheCompaniesAPI](https://github.com/thecompaniesapi)
 
