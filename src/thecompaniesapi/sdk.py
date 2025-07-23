@@ -47,7 +47,7 @@ class HttpClient:
         self.session.headers.update({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'User-Agent': 'thecompaniesapi-python-sdk/0.0.1'
+            'User-Agent': 'thecompaniesapi-python-sdk/1.0.2'
         })
         
         # Add authorization if token provided
