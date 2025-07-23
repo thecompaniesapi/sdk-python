@@ -532,57 +532,6 @@ response = tca.fetch_openapi()
 schema = response["data"]  # The OpenAPI schema
 ```
 
-## 🧪 Testing
-
-### Unit Tests
-
-Run the unit tests that don't require an API token:
-
-```bash
-pytest tests/test_client.py -m unit
-```
-
-### Integration Tests
-
-The SDK includes comprehensive integration tests that make real API calls. To run them:
-
-1. **Create a `.env` file** in the project root:
-   ```bash
-   # Required: Your API token from https://www.thecompaniesapi.com/settings/api-tokens
-   TCA_API_TOKEN=your-api-token-here
-   
-   # Optional configurations
-   TCA_API_URL=https://api.thecompaniesapi.com
-   TCA_VISITOR_ID=your-visitor-id
-   TCA_TIMEOUT=30
-   ```
-
-2. **Install test dependencies:**
-   ```bash
-   pip install -e ".[test]"
-   ```
-
-3. **Run integration tests:**
-   ```bash
-   # Run all integration tests
-   pytest tests/test_integration.py -m integration -v
-   
-   # Run all tests except integration tests
-   pytest -m "not integration"
-   
-   # Run all tests (unit + integration)
-   pytest
-   ```
-
-The integration tests cover:
-- Company search (GET and POST methods)
-- Company counting and filtering
-- Company lookup by email and domain
-- Complex query serialization
-- Error handling and edge cases
-- Dynamic method access
-- API health checks
-
 ## 🔗 Links
 
 - [The Companies API](https://www.thecompaniesapi.com)
