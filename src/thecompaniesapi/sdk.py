@@ -133,8 +133,7 @@ class HttpClient:
                 return {'data': response.text, 'status': response.status_code}
                 
         except requests.exceptions.RequestException as e:
-            # Handle request errors
-            raise ApiError(f"Request failed: {str(e)}") from e
+            raise ApiError.from_request_exception(e, f"Request failed: {str(e)}") from e
     
     def get(
         self,
@@ -186,8 +185,27 @@ class HttpClient:
 
 
 class ApiError(Exception):
-    """Custom exception for API errors."""
-    pass
+    """
+    Custom exception for API errors.
+    """
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+    @classmethod
+    def from_request_exception(cls, e: ApiError, message: str) -> "ApiError":
+        status_code = None
+        cause = e.__cause__
+        if isinstance(cause, requests.HTTPError) and cause.response is not None:
+            status_code = cause.response.status_code
+        elif isinstance(cause, requests.exceptions.RetryError):
+            # Retry exhausted - try to extract status from message
+            # e.g., "too many 429 error responses"
+            import re
+
+            if match := re.search(r"(\d{3})", str(cause)):
+                status_code = int(match.group(1))
+        return cls(message, status_code)
 
 
 class Client:

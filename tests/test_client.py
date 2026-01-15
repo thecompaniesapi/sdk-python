@@ -1,6 +1,8 @@
 import json
 import pytest
 import responses
+import requests
+
 from unittest.mock import Mock, patch
 
 from src.thecompaniesapi import Client, HttpClient, ApiError
@@ -154,8 +156,26 @@ class TestHttpClient:
         
         client = HttpClient(api_token="test-token")
         
-        with pytest.raises(ApiError, match="Request failed"):
+        with pytest.raises(ApiError, match="Request failed") as exc_info:
             client.get("/v2/error")
+            assert exc_info.value.status_code == 404
+    
+    @responses.activate
+    def test_request_error_timeout_handling(self):
+        """Test error handling for HTTP errors."""
+        responses.add(
+            responses.GET,
+            "https://api.thecompaniesapi.com/v2/error",
+            body=requests.exceptions.Timeout()  # Simulate a request failure
+        )
+        
+        client = HttpClient(api_token="test-token")
+        
+        try:
+            client.get("/v2/error")
+        except Exception as e:
+            assert e.status_code is None
+
     
     @responses.activate
     def test_non_json_response(self):
@@ -255,4 +275,15 @@ class TestApiError:
         assert str(error) == "Test error message"
         
         with pytest.raises(ApiError, match="Test error message"):
-            raise error 
+            raise error
+
+    
+    def test_api_error_status_code(self):
+        """Test ApiError with status code attribute."""
+        error = ApiError("Error with status", status_code=404)
+        assert str(error) == "Error with status"
+        assert error.status_code == 404
+        
+        with pytest.raises(ApiError) as exc_info:
+            raise error
+        assert exc_info.value.status_code == 404
