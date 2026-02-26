@@ -132,7 +132,7 @@ class HttpClient:
                 # If response is not JSON, return text content
                 return {'data': response.text, 'status': response.status_code}
                 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             raise ApiError.from_request_exception(e, f"Request failed: {str(e)}") from e
     
     def get(
@@ -193,7 +193,7 @@ class ApiError(Exception):
         self.status_code = status_code
 
     @classmethod
-    def from_request_exception(cls, e: ApiError, message: str) -> "ApiError":
+    def from_request_exception(cls, e: Exception, message: str) -> "ApiError":
         status_code = None
         cause = e.__cause__
         if isinstance(cause, requests.HTTPError) and cause.response is not None:
